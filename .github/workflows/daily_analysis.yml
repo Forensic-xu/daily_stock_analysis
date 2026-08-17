@@ -48,7 +48,7 @@ jobs:
         run: |
           mkdir -p data logs reports
       
-           - name: 执行股票分析
+              - name: 执行股票分析
         env:
           # ==============================
           # AI 配置 DeepSeek OpenAI兼容模式
@@ -66,11 +66,10 @@ jobs:
           GEMINI_MODEL_FALLBACK: 'gemini-2.0-flash'
           GEMINI_REQUEST_DELAY: '3.0'
 
-          
-          # ==========================================
           # 数据源
-          # ==========================================
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
+        run: |
+          python -m src.main
           
           # ==========================================
           # 搜索服务（不用可以留空）
