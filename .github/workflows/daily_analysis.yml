@@ -81,7 +81,7 @@ jobs:
           EMAIL_RECEIVERS: ""
           PUSHOVER_USER_KEY: ""
           PUSHOVER_API_TOKEN: ""
-          PUSHPLUS_TOKEN: ""
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
           CUSTOM_WEBHOOK_URLS: ""
           CUSTOM_WEBHOOK_BEARER_TOKEN: ""
           DISCORD_WEBHOOK_URL: ""
