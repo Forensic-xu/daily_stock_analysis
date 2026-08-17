@@ -51,6 +51,7 @@ class NotificationChannel(Enum):
     PUSHPLUS = "pushplus"  # PushPlus（国内推送服务）
     CUSTOM = "custom"      # 自定义 Webhook
     DISCORD = "discord"    # Discord 机器人 (Bot)
+    SERVERCHAN = "serverchan"  # ✅ 新增：Server酱
     UNKNOWN = "unknown"    # 未知
 
 
