@@ -1,115 +1,52 @@
-name: 每日股票分析
-
-on:
-  # 定时触发 - UTC 18:00 = 北京时间凌晨02:00 周一到周五(DeepSeek闲时半价)
-  schedule:
-    - cron: '0 18 * * 1-5'     # UTC 18:00 = 北京时间 02:00
-
-  # 手动触发
-  workflow_dispatch:
-    inputs:
-      mode:
-        description: '运行模式'
-        required: true
-        default: 'full'
-        type: choice
-        options:
-          - full          # 完整分析（股票+大盘）
-          - market-only   # 仅大盘复盘
-          - stocks-only   # 仅股票分析
-
-# 并发控制：同一时间只运行一个分析任务
-concurrency:
-  group: stock-analysis
-  cancel-in-progress: false
-
-jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    # 添加超时限制，防止任务卡死
-    timeout-minutes: 30
-
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 设置 Python 环境
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: 安装依赖
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: 创建必要目录
-        run: |
-          mkdir -p data logs reports
-
       - name: 执行股票分析
-        env:
-          # ==============================
-          # AI 配置 DeepSeek OpenAI兼容模式
-          # ==============================
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          LLM_PROVIDER: openai-compatible
-          LLM_MODEL: deepseek-chat
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_BASE_URL: https://api.deepseek.com/v1
-          OPENAI_MODEL: deepseek-chat
-
-          # Gemini AI (不使用，留空)
-          GEMINI_API_KEY: ""
-          GEMINI_MODEL: 'gemini-2.5-flash'
-          GEMINI_MODEL_FALLBACK: 'gemini-2.0-flash'
-          GEMINI_REQUEST_DELAY: '3.0'
-
-          # 搜索服务（不用可以留空）
-          BOCHA_API_KEYS: ""
-          TAVILY_API_KEYS: ""
-          SERPAPI_API_KEYS: ""
-
-          # 通知渠道（全部不用就留空）
-          WECHAT_WEBHOOK_URL: ""
-          FEISHU_WEBHOOK_URL: ""
-          TELEGRAM_BOT_TOKEN: ""
-          TELEGRAM_CHAT_ID: ""
-          EMAIL_SENDER: ""
-          EMAIL_PASSWORD: ""
-          EMAIL_RECEIVERS: ""
-          PUSHOVER_USER_KEY: ""
-          PUSHOVER_API_TOKEN: ""
-          # PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }} # 停用PushPlus
-          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }} # 启用Server酱‑Turbo
-          CUSTOM_WEBHOOK_URLS: ""
-          CUSTOM_WEBHOOK_BEARER_TOKEN: ""
-          DISCORD_WEBHOOK_URL: ""
-          DISCORD_BOT_TOKEN: ""
-          DISCORD_MAIN_CHANNEL_ID: ""
-          FEISHU_APP_ID: ""
-          FEISHU_APP_SECRET: ""
-          FEISHU_FOLDER_TOKEN: ""
-
-          # 自选股配置
-          STOCK_LIST: ${{ vars.STOCK_LIST || secrets.STOCK_LIST || '600519' }}
-
-          # 运行配置
-          REPORT_TYPE: ${{ vars.REPORT_TYPE || secrets.REPORT_TYPE || 'simple' }}
-          SINGLE_STOCK_NOTIFY: ${{ vars.SINGLE_STOCK_NOTIFY || secrets.SINGLE_STOCK_NOTIFY || 'true' }}
-          MARKET_REVIEW_ENABLED: ${{ vars.MARKET_REVIEW_ENABLED || secrets.MARKET_REVIEW_ENABLED || 'true' }}
-          ANALYSIS_DELAY: ${{ vars.ANALYSIS_DELAY || secrets.ANALYSIS_DELAY || '0' }}
-
-          # 系统配置
-          LOG_LEVEL: INFO
-          MAX_WORKERS: 3
-          # GitHub Actions 环境建议关闭不稳定的数据源
-          ENABLE_CHIP_DISTRIBUTION: 'false'
-
-          # 数据源
-          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
         run: |
+          # 把所有环境变量导出到shell环境，让python子进程继承
+          export DEEPSEEK_API_KEY="${{ secrets.DEEPSEEK_API_KEY }}"
+          export LLM_PROVIDER="openai-compatible"
+          export LLM_MODEL="deepseek-chat"
+          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+          export OPENAI_BASE_URL="https://api.deepseek.com/v1"
+          export OPENAI_MODEL="deepseek-chat"
+
+          export GEMINI_API_KEY=""
+          export GEMINI_MODEL='gemini-2.5-flash'
+          export GEMINI_MODEL_FALLBACK='gemini-2.0-flash'
+          export GEMINI_REQUEST_DELAY='3.0'
+
+          export BOCHA_API_KEYS=""
+          export TAVILY_API_KEYS=""
+          export SERPAPI_API_KEYS=""
+
+          export WECHAT_WEBHOOK_URL=""
+          export FEISHU_WEBHOOK_URL=""
+          export TELEGRAM_BOT_TOKEN=""
+          export TELEGRAM_CHAT_ID=""
+          export EMAIL_SENDER=""
+          export EMAIL_PASSWORD=""
+          export EMAIL_RECEIVERS=""
+          export PUSHOVER_USER_KEY=""
+          export PUSHOVER_API_TOKEN=""
+          export SERVERCHAN_SENDKEY="${{ secrets.SERVERCHAN_SENDKEY }}"
+          export CUSTOM_WEBHOOK_URLS=""
+          export CUSTOM_WEBHOOK_BEARER_TOKEN=""
+          export DISCORD_WEBHOOK_URL=""
+          export DISCORD_BOT_TOKEN=""
+          export DISCORD_MAIN_CHANNEL_ID=""
+          export FEISHU_APP_ID=""
+          export FEISHU_APP_SECRET=""
+          export FEISHU_FOLDER_TOKEN=""
+
+          export STOCK_LIST="${{ vars.STOCK_LIST || secrets.STOCK_LIST || '600519' }}"
+          export REPORT_TYPE="${{ vars.REPORT_TYPE || secrets.REPORT_TYPE || 'simple' }}"
+          export SINGLE_STOCK_NOTIFY="${{ vars.SINGLE_STOCK_NOTIFY || secrets.SINGLE_STOCK_NOTIFY || 'true' }}"
+          export MARKET_REVIEW_ENABLED="${{ vars.MARKET_REVIEW_ENABLED || secrets.MARKET_REVIEW_ENABLED || 'true' }}"
+          export ANALYSIS_DELAY="${{ vars.ANALYSIS_DELAY || secrets.ANALYSIS_DELAY || '0' }}"
+
+          export LOG_LEVEL="INFO"
+          export MAX_WORKERS="3"
+          export ENABLE_CHIP_DISTRIBUTION="false"
+          export TUSHARE_TOKEN="${{ secrets.TUSHARE_TOKEN }}"
+
           # 判断运行模式
           MODE="${{ github.event.inputs.mode || 'full' }}"
 
@@ -152,33 +89,4 @@ jobs:
             python main.py --no-market-review
           else
             python main.py
-          fi
-
-      - name: 上传分析报告
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: analysis-reports-${{ github.run_number }}
-          path: |
-            reports/
-            logs/
-          retention-days: 30
-
-      - name: 显示运行结果
-        if: always()
-        run: |
-          echo ""
-          echo "=========================================="
-          echo "📊 分析完成"
-          echo "=========================================="
-          if [ -d "reports" ] && [ "$(ls -A reports 2>/dev/null)" ]; then
-            echo "生成的报告:"
-            ls -la reports/
-          else
-            echo "⚠️ 未生成报告文件"
-          fi
-          echo ""
-          if [ -f "logs/stock_analysis_$(date +%Y%m%d).log" ]; then
-            echo "📜 最近日志（最后 30 行）:"
-            tail -30 logs/stock_analysis_*.log 2>/dev/null || echo "无日志"
           fi
