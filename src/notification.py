@@ -125,119 +125,119 @@ class NotificationService:
     """
     
     def __init__(self, source_message: Optional[BotMessage] = None):
-    """
-    初始化通知服务
+        """
+        初始化通知服务
     
-    检测所有已配置的渠道，推送时会向所有渠道发送
-    """
-    config = get_config()
-    self._source_message = source_message
-    self._context_channels: List[str] = []
+        检测所有已配置的渠道，推送时会向所有渠道发送
+        """
+        config = get_config()
+        self._source_message = source_message
+        self._context_channels: List[str] = []
     
-    # 各渠道的 Webhook URL
-    self._wechat_url = config.wechat_webhook_url
-    self._feishu_url = getattr(config, 'feishu_webhook_url', None)
+        # 各渠道的 Webhook URL
+        self._wechat_url = config.wechat_webhook_url
+        self._feishu_url = getattr(config, 'feishu_webhook_url', None)
     
-    # Telegram 配置
-    self._telegram_config = {
-        'bot_token': getattr(config, 'telegram_bot_token', None),
-        'chat_id': getattr(config, 'telegram_chat_id', None),
-    }
+        # Telegram 配置
+        self._telegram_config = {
+            'bot_token': getattr(config, 'telegram_bot_token', None),
+            'chat_id': getattr(config, 'telegram_chat_id', None),
+        }
     
-    # 邮件配置
-    self._email_config = {
-        'sender': config.email_sender,
-        'password': config.email_password,
-        'receivers': config.email_receivers or ([config.email_sender] if config.email_sender else []),
-    }
+        # 邮件配置
+        self._email_config = {
+            'sender': config.email_sender,
+            'password': config.email_password,
+            'receivers': config.email_receivers or ([config.email_sender] if config.email_sender else []),
+        }
     
-    # Pushover 配置
-    self._pushover_config = {
-        'user_key': getattr(config, 'pushover_user_key', None),
-        'api_token': getattr(config, 'pushover_api_token', None),
-    }
+        # Pushover 配置
+        self._pushover_config = {
+            'user_key': getattr(config, 'pushover_user_key', None),
+            'api_token': getattr(config, 'pushover_api_token', None),
+        }
 
-    # PushPlus 配置
-    self._pushplus_token = getattr(config, 'pushplus_token', None)
+        # PushPlus 配置
+        self._pushplus_token = getattr(config, 'pushplus_token', None)
 
-    # ============================================================
-    # ✅ 新增：Server酱 配置
-    # ============================================================
-    self._serverchan_sendkey = getattr(config, 'serverchan_sendkey', None)
-    # 如果 config 中没有，尝试直接从环境变量读取（兼容旧配置）
-    if not self._serverchan_sendkey:
-        self._serverchan_sendkey = os.environ.get('SERVERCHAN_SENDKEY') or os.environ.get('SERVERCHAN-SENDKEY')
+        # ============================================================
+        # ✅ 新增：Server酱 配置
+        # ============================================================
+        self._serverchan_sendkey = getattr(config, 'serverchan_sendkey', None)
+        # 如果 config 中没有，尝试直接从环境变量读取（兼容旧配置）
+        if not self._serverchan_sendkey:
+            self._serverchan_sendkey = os.environ.get('SERVERCHAN_SENDKEY') or os.environ.get('SERVERCHAN-SENDKEY')
 
-    # 自定义 Webhook 配置
-    self._custom_webhook_urls = getattr(config, 'custom_webhook_urls', []) or []
-    self._custom_webhook_bearer_token = getattr(config, 'custom_webhook_bearer_token', None)
+        # 自定义 Webhook 配置
+        self._custom_webhook_urls = getattr(config, 'custom_webhook_urls', []) or []
+        self._custom_webhook_bearer_token = getattr(config, 'custom_webhook_bearer_token', None)
     
-    # Discord 配置
-    self._discord_config = {
-        'bot_token': getattr(config, 'discord_bot_token', None),
-        'channel_id': getattr(config, 'discord_main_channel_id', None),
-        'webhook_url': getattr(config, 'discord_webhook_url', None),
-    }
+        # Discord 配置
+        self._discord_config = {
+            'bot_token': getattr(config, 'discord_bot_token', None),
+            'channel_id': getattr(config, 'discord_main_channel_id', None),
+            'webhook_url': getattr(config, 'discord_webhook_url', None),
+        }
     
-    # 消息长度限制（字节）
-    self._feishu_max_bytes = getattr(config, 'feishu_max_bytes', 20000)
-    self._wechat_max_bytes = getattr(config, 'wechat_max_bytes', 4000)
+        # 消息长度限制（字节）
+        self._feishu_max_bytes = getattr(config, 'feishu_max_bytes', 20000)
+        self._wechat_max_bytes = getattr(config, 'wechat_max_bytes', 4000)
     
-    # 检测所有已配置的渠道
-    self._available_channels = self._detect_all_channels()
-    if self._has_context_channel():
-        self._context_channels.append("钉钉会话")
+        # 检测所有已配置的渠道
+        self._available_channels = self._detect_all_channels()
+        if self._has_context_channel():
+            self._context_channels.append("钉钉会话")
     
-    if not self._available_channels and not self._context_channels:
-        logger.warning("未配置有效的通知渠道，将不发送推送通知")
-    else:
-        channel_names = [ChannelDetector.get_channel_name(ch) for ch in self._available_channels]
-        channel_names.extend(self._context_channels)
-        logger.info(f"已配置 {len(channel_names)} 个通知渠道：{', '.join(channel_names)}")
+        if not self._available_channels and not self._context_channels:
+            logger.warning("未配置有效的通知渠道，将不发送推送通知")
+        else:
+            channel_names = [ChannelDetector.get_channel_name(ch) for ch in self._available_channels]
+            channel_names.extend(self._context_channels)
+            logger.info(f"已配置 {len(channel_names)} 个通知渠道：{', '.join(channel_names)}")
     
     def _detect_all_channels(self) -> List[NotificationChannel]:
-    """
-    检测所有已配置的渠道
-    """
-    channels = []
+        """
+        检测所有已配置的渠道
+        """
+        channels = []
     
-    # 企业微信
-    if self._wechat_url:
-        channels.append(NotificationChannel.WECHAT)
+        # 企业微信
+        if self._wechat_url:
+            channels.append(NotificationChannel.WECHAT)
     
-    # 飞书
-    if self._feishu_url:
-        channels.append(NotificationChannel.FEISHU)
+        # 飞书
+        if self._feishu_url:
+            channels.append(NotificationChannel.FEISHU)
     
-    # Telegram
-    if self._is_telegram_configured():
-        channels.append(NotificationChannel.TELEGRAM)
+        # Telegram
+        if self._is_telegram_configured():
+            channels.append(NotificationChannel.TELEGRAM)
     
-    # 邮件
-    if self._is_email_configured():
-        channels.append(NotificationChannel.EMAIL)
+        # 邮件
+        if self._is_email_configured():
+            channels.append(NotificationChannel.EMAIL)
     
-    # Pushover
-    if self._is_pushover_configured():
-        channels.append(NotificationChannel.PUSHOVER)
+        # Pushover
+        if self._is_pushover_configured():
+            channels.append(NotificationChannel.PUSHOVER)
 
-    # PushPlus
-    if self._pushplus_token:
-        channels.append(NotificationChannel.PUSHPLUS)
+        # PushPlus
+        if self._pushplus_token:
+            channels.append(NotificationChannel.PUSHPLUS)
 
-    # ✅ 新增：Server酱
-    if self._serverchan_sendkey:
-        channels.append(NotificationChannel.SERVERCHAN)
+        # ✅ 新增：Server酱
+        if self._serverchan_sendkey:
+            channels.append(NotificationChannel.SERVERCHAN)
 
-    # 自定义 Webhook
-    if self._custom_webhook_urls:
-        channels.append(NotificationChannel.CUSTOM)
+        # 自定义 Webhook
+        if self._custom_webhook_urls:
+            channels.append(NotificationChannel.CUSTOM)
     
-    # Discord
-    if self._is_discord_configured():
-        channels.append(NotificationChannel.DISCORD)
+        # Discord
+        if self._is_discord_configured():
+            channels.append(NotificationChannel.DISCORD)
     
-    return channels
+        return channels
     
     def _is_telegram_configured(self) -> bool:
         """检查 Telegram 配置是否完整"""
@@ -2868,71 +2868,71 @@ class NotificationService:
             return False
     
     def send(self, content: str) -> bool:
-    """
-    统一发送接口 - 向所有已配置的渠道发送
+        """
+        统一发送接口 - 向所有已配置的渠道发送
     
-    遍历所有已配置的渠道，逐一发送消息
+        遍历所有已配置的渠道，逐一发送消息
     
-    Args:
-        content: 消息内容（Markdown 格式）
+        Args:
+            content: 消息内容（Markdown 格式）
         
-    Returns:
-        是否至少有一个渠道发送成功
-    """
-    context_success = self.send_to_context(content)
+        Returns:
+            是否至少有一个渠道发送成功
+        """
+        context_success = self.send_to_context(content)
 
-    if not self._available_channels:
-        if context_success:
-            logger.info("已通过消息上下文渠道完成推送（无其他通知渠道）")
-            return True
-        logger.warning("通知服务不可用，跳过推送")
-        return False
+        if not self._available_channels:
+            if context_success:
+                logger.info("已通过消息上下文渠道完成推送（无其他通知渠道）")
+                return True
+            logger.warning("通知服务不可用，跳过推送")
+            return False
     
-    channel_names = self.get_channel_names()
-    logger.info(f"正在向 {len(self._available_channels)} 个渠道发送通知：{channel_names}")
+        channel_names = self.get_channel_names()
+        logger.info(f"正在向 {len(self._available_channels)} 个渠道发送通知：{channel_names}")
     
-    success_count = 0
-    fail_count = 0
+        success_count = 0
+        fail_count = 0
     
-    for channel in self._available_channels:
-        channel_name = ChannelDetector.get_channel_name(channel)
-        try:
-            if channel == NotificationChannel.WECHAT:
-                result = self.send_to_wechat(content)
-            elif channel == NotificationChannel.FEISHU:
-                result = self.send_to_feishu(content)
-            elif channel == NotificationChannel.TELEGRAM:
-                result = self.send_to_telegram(content)
-            elif channel == NotificationChannel.EMAIL:
-                result = self.send_to_email(content)
-            elif channel == NotificationChannel.PUSHOVER:
-                result = self.send_to_pushover(content)
-            elif channel == NotificationChannel.PUSHPLUS:
-                result = self.send_to_pushplus(content)
-            # ============================================================
-            # ✅ 在这里添加 Server酱 调用
-            # ============================================================
-            elif channel == NotificationChannel.SERVERCHAN:
-                result = self.send_to_serverchan(content)
-            elif channel == NotificationChannel.CUSTOM:
-                result = self.send_to_custom(content)
-            elif channel == NotificationChannel.DISCORD:
-                result = self.send_to_discord(content)
-            else:
-                logger.warning(f"不支持的通知渠道: {channel}")
-                result = False
+        for channel in self._available_channels:
+            channel_name = ChannelDetector.get_channel_name(channel)
+            try:
+                if channel == NotificationChannel.WECHAT:
+                    result = self.send_to_wechat(content)
+                elif channel == NotificationChannel.FEISHU:
+                    result = self.send_to_feishu(content)
+                elif channel == NotificationChannel.TELEGRAM:
+                    result = self.send_to_telegram(content)
+                elif channel == NotificationChannel.EMAIL:
+                    result = self.send_to_email(content)
+                elif channel == NotificationChannel.PUSHOVER:
+                    result = self.send_to_pushover(content)
+                elif channel == NotificationChannel.PUSHPLUS:
+                    result = self.send_to_pushplus(content)
+                # ============================================================
+                # ✅ 在这里添加 Server酱 调用
+                # ============================================================
+                elif channel == NotificationChannel.SERVERCHAN:
+                    result = self.send_to_serverchan(content)
+                elif channel == NotificationChannel.CUSTOM:
+                    result = self.send_to_custom(content)
+                elif channel == NotificationChannel.DISCORD:
+                    result = self.send_to_discord(content)
+                else:
+                    logger.warning(f"不支持的通知渠道: {channel}")
+                    result = False
             
-            if result:
-                success_count += 1
-            else:
-                fail_count += 1
+                if result:
+                    success_count += 1
+                else:
+                    fail_count += 1
                 
-        except Exception as e:
-            logger.error(f"{channel_name} 发送失败: {e}")
-            fail_count += 1
+            except Exception as e:
+                logger.error(f"{channel_name} 发送失败: {e}")
+                fail_count += 1
     
-    logger.info(f"通知发送完成：成功 {success_count} 个，失败 {fail_count} 个")
-    return success_count > 0 or context_success
+        logger.info(f"通知发送完成：成功 {success_count} 个，失败 {fail_count} 个")
+        return success_count > 0 or context_success
     
     def _send_chunked_messages(self, content: str, max_length: int) -> bool:
         """
