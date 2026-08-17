@@ -82,7 +82,7 @@ jobs:
           PUSHOVER_USER_KEY: ""
           PUSHOVER_API_TOKEN: ""
           # PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }} # 停用PushPlus
-          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }} # 启用Server酱‑Turbo
+          SCKEY: ${{ secrets.SCKEY }} # 启用Server酱‑Turbo
           CUSTOM_WEBHOOK_URLS: ""
           CUSTOM_WEBHOOK_BEARER_TOKEN: ""
           DISCORD_WEBHOOK_URL: ""
