@@ -101,6 +101,11 @@ class Config:
     # PushPlus 推送配置
     pushplus_token: Optional[str] = None  # PushPlus Token
 
+    # ============================================================
+    # ✅ 新增：Server酱 推送配置
+    # ============================================================
+    serverchan_sendkey: Optional[str] = None  # Server酱 SendKey
+
     # 分析间隔时间（秒）- 用于避免API限流
     analysis_delay: float = 0.0  # 个股分析与大盘分析之间的延迟
 
@@ -284,6 +289,11 @@ class Config:
         serpapi_keys_str = os.getenv('SERPAPI_API_KEYS', '')
         serpapi_keys = [k.strip() for k in serpapi_keys_str.split(',') if k.strip()]
         
+        # ============================================================
+        # ✅ 修复：读取 Server酱 SendKey（兼容下划线和横杠两种命名）
+        # ============================================================
+        serverchan_sendkey = os.getenv('SERVERCHAN_SENDKEY') or os.getenv('SERVERCHAN-SENDKEY')
+        
         return cls(
             stock_list=stock_list,
             feishu_app_id=os.getenv('FEISHU_APP_ID'),
@@ -314,6 +324,8 @@ class Config:
             pushover_user_key=os.getenv('PUSHOVER_USER_KEY'),
             pushover_api_token=os.getenv('PUSHOVER_API_TOKEN'),
             pushplus_token=os.getenv('PUSHPLUS_TOKEN'),
+            # ✅ 新增：Server酱 SendKey
+            serverchan_sendkey=serverchan_sendkey,
             custom_webhook_urls=[u.strip() for u in os.getenv('CUSTOM_WEBHOOK_URLS', '').split(',') if u.strip()],
             custom_webhook_bearer_token=os.getenv('CUSTOM_WEBHOOK_BEARER_TOKEN'),
             discord_bot_token=os.getenv('DISCORD_BOT_TOKEN'),
@@ -428,7 +440,9 @@ class Config:
         if not self.bocha_api_keys and not self.tavily_api_keys and not self.serpapi_keys:
             warnings.append("提示：未配置搜索引擎 API Key (Bocha/Tavily/SerpAPI)，新闻搜索功能将不可用")
         
-        # 检查通知配置
+        # ============================================================
+        # ✅ 修复：检查通知配置时包含 Server酱
+        # ============================================================
         has_notification = (
             self.wechat_webhook_url or
             self.feishu_webhook_url or
@@ -436,6 +450,7 @@ class Config:
             (self.email_sender and self.email_password) or
             (self.pushover_user_key and self.pushover_api_token) or
             self.pushplus_token or
+            self.serverchan_sendkey or  # ✅ 新增
             (self.custom_webhook_urls and self.custom_webhook_bearer_token) or
             (self.discord_bot_token and self.discord_main_channel_id) or
             self.discord_webhook_url
