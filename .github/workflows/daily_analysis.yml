@@ -1,11 +1,9 @@
 name: 每日股票分析
 
 on:
-  # 定时触发 - UTC 18:00 = 北京时间凌晨02:00 周一到周五(DeepSeek闲时半价)
   schedule:
-    - cron: '0 18 * * 1-5'     # UTC 18:00 = 北京时间 02:00
+    - cron: '0 18 * * 1-5'
 
-  # 手动触发
   workflow_dispatch:
     inputs:
       mode:
@@ -14,11 +12,10 @@ on:
         default: 'full'
         type: choice
         options:
-          - full          # 完整分析（股票+大盘）
-          - market-only   # 仅大盘复盘
-          - stocks-only   # 仅股票分析
+          - full
+          - market-only
+          - stocks-only
 
-# 并发控制：同一时间只运行一个分析任务
 concurrency:
   group: stock-analysis
   cancel-in-progress: false
@@ -26,13 +23,9 @@ concurrency:
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    # 添加超时限制，防止任务卡死
     timeout-minutes: 30
-    # Job级别env，整个job下shell/python子进程全部继承环境变量，解决变量丢失问题
     env:
-      # ==============================
-      # AI 配置 DeepSeek OpenAI兼容模式
-      # ==============================
+      # AI 配置
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
       LLM_PROVIDER: openai-compatible
       LLM_MODEL: deepseek-chat
@@ -40,18 +33,18 @@ jobs:
       OPENAI_BASE_URL: https://api.deepseek.com/v1
       OPENAI_MODEL: deepseek-chat
 
-      # Gemini AI (不使用，留空)
+      # Gemini AI (不使用)
       GEMINI_API_KEY: ""
       GEMINI_MODEL: 'gemini-2.5-flash'
       GEMINI_MODEL_FALLBACK: 'gemini-2.0-flash'
       GEMINI_REQUEST_DELAY: '3.0'
 
-      # 搜索服务（不用可以留空）
+      # 搜索服务
       BOCHA_API_KEYS: ""
       TAVILY_API_KEYS: ""
       SERPAPI_API_KEYS: ""
 
-      # 通知渠道（全部不用就留空）
+      # 通知渠道
       WECHAT_WEBHOOK_URL: ""
       FEISHU_WEBHOOK_URL: ""
       TELEGRAM_BOT_TOKEN: ""
@@ -62,7 +55,7 @@ jobs:
       PUSHOVER_USER_KEY: ""
       PUSHOVER_API_TOKEN: ""
       PUSHPLUS_TOKEN: ""
-      # ✅ 修复：使用下划线命名，确保 Python os.environ 可读取
+      # ✅ 使用下划线命名
       SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
       CUSTOM_WEBHOOK_URLS: ""
       CUSTOM_WEBHOOK_BEARER_TOKEN: ""
@@ -110,7 +103,7 @@ jobs:
           mkdir -p data logs reports
 
       # ============================================
-      # 🔍 新增：调试环境变量（验证 Python 可读性）
+      # 🔍 调试环境变量（验证 Python 可读性）
       # ============================================
       - name: 调试环境变量
         run: |
@@ -130,57 +123,24 @@ jobs:
           echo "【Python 环境】"
           python3 << 'PYEOF'
           import os
-          import sys
           
-          print("  Python 版本:", sys.version.split()[0])
-          
-          # 检查所有环境变量（仅显示匹配的）
-          found = False
+          print("  尝试读取 SERVERCHAN_SENDKEY:")
+          value = os.environ.get('SERVERCHAN_SENDKEY')
+          if value:
+              print(f"  ✅ Python 读取成功: {value[:4]}... (长度: {len(value)})")
+          else:
+              print("  ❌ Python 读取不到 SERVERCHAN_SENDKEY")
+              
+          # 检查是否有其他变体
           for key in os.environ.keys():
               if 'SERVER' in key.upper() and 'CHAN' in key.upper():
-                  value = os.environ.get(key, '')
-                  if value:
-                      print(f"  ✅ os.environ['{key}'] = {value[:4]}... (长度: {len(value)})")
-                      found = True
-                  else:
-                      print(f"  ⚠️ os.environ['{key}'] = (空字符串)")
-                      found = True
-          
-          if not found:
-              print("  ❌ 未找到任何 SERVERCHAN 相关的环境变量")
-          
-          # 尝试几种常见的读取方式
-          print("")
-          print("  【尝试不同读取方式】")
-          test_keys = ['SERVERCHAN_SENDKEY', 'SERVERCHAN-SENDKEY', 'serverchan_sendkey']
-          for key in test_keys:
-              value = os.environ.get(key)
-              if value:
-                  print(f"  ✅ os.environ.get('{key}') = {value[:4]}...")
-              else:
-                  print(f"  ❌ os.environ.get('{key}') = None")
+                  print(f"  发现其他变量: {key} = {os.environ.get(key, '')[:4]}...")
           PYEOF
           echo ""
           echo "=========================================="
 
-      # ============================================
-      # 📝 新增：在 Python 执行前导出环境变量（双重保险）
-      # ============================================
-      - name: 导出环境变量（双重保险）
-        run: |
-          # 确保关键环境变量被正确导出到 Python 可读取的格式
-          # 如果 Python 代码中使用了横杠命名，这里做兼容转换
-          export SERVERCHAN_SENDKEY="${SERVERCHAN_SENDKEY}"
-          export SERVERCHAN-SENDKEY="${SERVERCHAN_SENDKEY}"  # 兼容旧版横杠命名
-          
-          # 验证导出
-          echo "✅ 环境变量已导出（兼容横杠和下划线两种格式）"
-          echo "  SERVERCHAN_SENDKEY (下划线): ${SERVERCHAN_SENDKEY:0:4}..."
-          echo "  SERVERCHAN-SENDKEY (横杠): ${SERVERCHAN-SENDKEY:0:4}..."
-
       - name: 执行股票分析
         run: |
-          # 判断运行模式
           MODE="${{ github.event.inputs.mode || 'full' }}"
 
           echo "=========================================="
@@ -215,7 +175,6 @@ jobs:
           echo "=========================================="
           echo ""
 
-          # 执行分析
           if [ "$MODE" = "market-only" ]; then
             python main.py --market-review
           elif [ "$MODE" = "stocks-only" ]; then
