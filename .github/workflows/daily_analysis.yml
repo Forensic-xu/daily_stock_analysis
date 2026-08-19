@@ -24,27 +24,26 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      # AI 配置
+          # AI 配置
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
       LLM_PROVIDER: openai-compatible
       LLM_MODEL: deepseek-chat
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_BASE_URL: https://api.deepseek.com/v1
       OPENAI_MODEL: deepseek-chat
-
       # Gemini AI (不使用)
       GEMINI_API_KEY: ""
       GEMINI_MODEL: 'gemini-2.5-flash'
       GEMINI_MODEL_FALLBACK: 'gemini-2.0-flash'
       GEMINI_REQUEST_DELAY: '3.0'
-
       # 搜索服务
       BOCHA_API_KEYS: ""
       TAVILY_API_KEYS: ""
       SERPAPI_API_KEYS: ""
 
-      # 通知渠道
+      # ==============================================
+      # 关键修复：禁用自带 ServerChan、改用自定义 WebHook 推送
+      # ==============================================
       WECHAT_WEBHOOK_URL: ""
       FEISHU_WEBHOOK_URL: ""
       TELEGRAM_BOT_TOKEN: ""
@@ -55,11 +54,14 @@ jobs:
       PUSHOVER_USER_KEY: ""
       PUSHOVER_API_TOKEN: ""
       PUSHPLUS_TOKEN: ""
-      # ✅ 使用下划线命名
-      SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
-      SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_SENDKEY }}
-      CUSTOM_WEBHOOK_URLS: ""
+
+      # 【重要】彻底关闭旧的报错 ServerChan 变量
+      # SERVERCHAN_SENDKEY: xxx（注释/删除，不要再用）
+
+      # 新推送方案：自定义 WebHook 对接 Server酱（绕过源码BUG）
+      CUSTOM_WEBHOOK_URLS: ${{ secrets.CUSTOM_WEBHOOK_URLS }}
       CUSTOM_WEBHOOK_BEARER_TOKEN: ""
+
       DISCORD_WEBHOOK_URL: ""
       DISCORD_BOT_TOKEN: ""
       DISCORD_MAIN_CHANNEL_ID: ""
@@ -68,19 +70,16 @@ jobs:
       FEISHU_FOLDER_TOKEN: ""
 
       # 自选股配置
-      STOCK_LIST: ${{ vars.STOCK_LIST || secrets.STOCK_LIST || '600519' }}
-
+      STOCK_LIST: ${{ vars.STOCK_LIST || '002475,000100' }}
       # 运行配置
-      REPORT_TYPE: ${{ vars.REPORT_TYPE || secrets.REPORT_TYPE || 'simple' }}
-      SINGLE_STOCK_NOTIFY: ${{ vars.SINGLE_STOCK_NOTIFY || secrets.SINGLE_STOCK_NOTIFY || 'true' }}
-      MARKET_REVIEW_ENABLED: ${{ vars.MARKET_REVIEW_ENABLED || secrets.MARKET_REVIEW_ENABLED || 'true' }}
-      ANALYSIS_DELAY: ${{ vars.ANALYSIS_DELAY || secrets.ANALYSIS_DELAY || '0' }}
-
+      REPORT_TYPE: ${{ vars.REPORT_TYPE || 'full' }}
+      SINGLE_STOCK_NOTIFY: ${{ vars.SINGLE_STOCK_NOTIFY || 'true' }}
+      MARKET_REVIEW_ENABLED: ${{ vars.MARKET_REVIEW_ENABLED || 'true' }}
+      ANALYSIS_DELAY: ${{ vars.ANALYSIS_DELAY || '0' }}
       # 系统配置
       LOG_LEVEL: INFO
       MAX_WORKERS: 3
       ENABLE_CHIP_DISTRIBUTION: 'false'
-
       # 数据源
       TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
 
