@@ -57,6 +57,7 @@ jobs:
       PUSHPLUS_TOKEN: ""
       # ✅ 使用下划线命名
       SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+      SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_SENDKEY }}
       CUSTOM_WEBHOOK_URLS: ""
       CUSTOM_WEBHOOK_BEARER_TOKEN: ""
       DISCORD_WEBHOOK_URL: ""
