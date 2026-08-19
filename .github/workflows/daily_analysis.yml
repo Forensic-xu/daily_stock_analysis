@@ -24,7 +24,8 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-          # AI 配置
+    env:
+      # AI 配置
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
       LLM_PROVIDER: openai-compatible
       LLM_MODEL: deepseek-chat
